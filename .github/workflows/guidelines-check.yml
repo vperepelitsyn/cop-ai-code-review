@@ -23,7 +23,7 @@ jobs:
       - name: Check PR guidelines compliance
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.CUSTOM_GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENCODE_PERMISSION: '{ "bash": { "gh*": "allow", "gh pr review*": "deny", "*": "deny" } }'
         run: |
           opencode run -m openrouter/anthropic/claude-3.7-sonnet "A new pull request has been created: '${{ github.event.pull_request.title }}'
