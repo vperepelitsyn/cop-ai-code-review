@@ -1,0 +1,64 @@
+name: Guidelines Check
+
+on:
+  # Disabled - uncomment to re-enable
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  check-guidelines:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install opencode
+        run: curl -fsSL https://opencode.ai/install | bash
+
+      - name: Check PR guidelines compliance
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GH_TOKEN: ${{ secrets.CUSTOM_GH_TOKEN }}
+          OPENCODE_PERMISSION: '{ "bash": { "gh*": "allow", "gh pr review*": "deny", "*": "deny" } }'
+        run: |
+          opencode run -m openrouter/anthropic/claude-3.7-sonnet "A new pull request has been created: '${{ github.event.pull_request.title }}'
+
+          <pr-number>
+          ${{ github.event.pull_request.number }}
+          </pr-number>
+
+          <pr-description>
+          ${{ github.event.pull_request.body }}
+          </pr-description>
+
+          Please check all the code changes in this pull request against the guidelines in AGENTS.md file in this repository. Diffs are important but make sure you read the entire file to get proper context. Make it clear the suggestions are merely suggestions and the human can decide what to do.
+
+          You MUST use the GitHub CLI exactly in the following format — do not change the order of arguments, do not omit headers, and do not use :owner/:repo or gh pr view to get commit IDs. Always use the provided variables.
+
+          ```
+          gh api --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments \
+            -f 'body=[comment text here]' \
+            -f 'commit_id=${{ github.event.pull_request.head.sha }}' \
+            -f 'path=[file path here]' \
+            -F "line=[line number here]" \
+            -f 'side=RIGHT'
+          ```
+
+          Rules:
+          1. Replace [comment text here] with your review comment. Always wrap it in single quotes to avoid breaking due to special characters or newlines.
+          2. Replace [file path here] with the exact file path from the diff.
+          3. Replace [line number here] with the exact line number in the diff.
+          4. Never use $(...) to get commit IDs — always use \${{ github.event.pull_request.head.sha }}.
+          5. Never use repos/:owner/:repo — always use /repos/\${{ github.repository }}.
+          6. Always include both headers exactly as shown.
+          7. Use -F for the line number, not -f.
+
+          Only create comments for actual violations. If the code follows all guidelines, don't run any gh commands."
