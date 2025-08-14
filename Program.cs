@@ -7,5 +7,3 @@ static string GetGreeting() {
     string greeting = "Hello";
     return greeting;
 }
-
-// Comment
